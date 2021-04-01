@@ -3,7 +3,7 @@ version: '3'
 services:
   # see https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
   elasticsearch:
-    image: elasticsearch:${ELASTIC_VERSION}
+    image: elastic/elasticsearch:${ELASTIC_VERSION}
     ports: 
       - "9200:9200"
       - "9300:9300"
@@ -18,11 +18,10 @@ services:
       - elk_net
 
   logstash:
-    image: logstash:${ELASTIC_VERSION}
+    image: elastic/logstash:${ELASTIC_VERSION}
     volumes:
       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
       - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
-      - ./logs/:/usr/share/logs:ro
     ports:
       - "5044:5044"
       - "5000:5000/tcp"
@@ -36,7 +35,7 @@ services:
       - elasticsearch
 
   kibana:
-    image: kibana:${ELASTIC_VERSION}
+    image: elastic/kibana:${ELASTIC_VERSION}
     volumes:
       - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
     ports:
@@ -45,6 +44,22 @@ services:
       - elk_net
     depends_on:
       - elasticsearch
+
+  filebeat-nginx:
+    image: elastic/filebeat:${ELASTIC_VERSION}
+    volumes: 
+      - ./filebeat/nginx.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ${NGINX_LOGS}:/usr/logs/nginx
+    networks:
+      - elk_net
+    depends_on:
+      - logstash
+
+  # filebeat-laravel:
+  #   image: elastic/filebeat:${ELASTIC_VERSION}
+  #   volumes: 
+  #     - ${LARAVEL_LOGS}/:/usr/share/filebeat/logs
+
 
 networks:
   elk_net:
